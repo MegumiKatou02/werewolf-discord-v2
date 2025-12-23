@@ -513,6 +513,63 @@ impl GameRoom {
                         .await;
                 }
             }
+            RoomEvent::BodyguardProtect { user_id, target } => {
+                if self.game_state.phase != Phase::Night {
+                    return Ok(());
+                }
+
+                let (target_alive, target_name) =
+                    match self.players.iter().find(|p| p.user_id == target) {
+                        Some(p) => (p.alive, p.name.clone()),
+                        None => return Ok(()),
+                    };
+
+                if !target_alive {
+                    let _ = user_id
+                        .create_dm_channel(&self.http)
+                        .await?
+                        .say(&self.http, "❌ Không có tác dụng lên người chết.")
+                        .await;
+                    return Ok(());
+                }
+
+                // if target == user_id {
+                //     let _ = user_id
+                //         .create_dm_channel(&self.http)
+                //         .await?
+                //         .say(&self.http, "❌ Bạn không thể tự bảo vệ bản thân.")
+                //         .await;
+                //     return Ok(());
+                // }
+
+                if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
+                    if let Some(bodyguard) = player
+                        .role
+                        .as_any_mut()
+                        .downcast_mut::<crate::roles::Bodyguard>()
+                    {
+                        if bodyguard.protected_count == 0 {
+                            let _ = user_id
+                                .create_dm_channel(&self.http)
+                                .await?
+                                .say(&self.http, "❌ Bạn đã hết lượt dùng chức năng.")
+                                .await;
+                            return Ok(());
+                        }
+
+                        bodyguard.protected_person = Some(target);
+
+                        let _ = user_id
+                            .create_dm_channel(&self.http)
+                            .await?
+                            .say(
+                                &self.http,
+                                format!("🛡️ Bạn đã bảo vệ: **{}**.", target_name),
+                            )
+                            .await;
+                    }
+                }
+            }
             _ => {}
         }
         Ok(())

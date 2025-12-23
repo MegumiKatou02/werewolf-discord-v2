@@ -255,6 +255,99 @@ impl EventHandler for Handler {
                     return;
                 }
 
+                if custom_id.starts_with("protect_target_bodyguard_") {
+                    let msg_info = self
+                        .handle_target_selection_menu(
+                            &ctx,
+                            &component,
+                            "protect_target_bodyguard_",
+                            "bodyguard_submit_protect",
+                            "🛡️ Chọn người cần bảo vệ...",
+                            |p| p.alive && p.user_id != component.user.id,
+                        )
+                        .await;
+
+                    if let Some((channel_id, message_id)) = msg_info {
+                        if let Some(room_handle) =
+                            self.get_room_handle_by_user(component.user.id).await
+                        {
+                            let event = RoomEvent::RegisterInteraction {
+                                user_id: component.user.id,
+                                channel_id,
+                                message_id,
+                                message_type_store: MessageTypeStore::NightMessage,
+                            };
+
+                            let _ = room_handle.sender.send(event);
+                        }
+                    }
+                    return;
+                }
+
+                if custom_id == "bodyguard_submit_protect" {
+                    let values = match &component.data.kind {
+                        ComponentInteractionDataKind::StringSelect { values } => values,
+                        _ => return,
+                    };
+
+                    if values.is_empty() {
+                        return;
+                    }
+
+                    let first_value = &values[0];
+                    if first_value == "cancel_action" {
+                        let _ = component
+                            .create_response(
+                                &ctx.http,
+                                CreateInteractionResponse::UpdateMessage(
+                                    CreateInteractionResponseMessage::new()
+                                        .content("❌ Đã hủy bỏ hành động bảo vệ.")
+                                        .components(vec![]),
+                                ),
+                            )
+                            .await;
+                        return;
+                    }
+
+                    let target_id: UserId = match first_value.parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    let room_handle = match self.get_room_handle_by_user(component.user.id).await {
+                        Some(h) => h,
+                        None => {
+                            self.reply_error(&ctx, &component, "❌ Lỗi: Không tìm thấy phòng.")
+                                .await;
+                            return;
+                        }
+                    };
+
+                    let event = RoomEvent::BodyguardProtect {
+                        user_id: component.user.id,
+                        target: target_id,
+                    };
+
+                    if let Err(_) = room_handle.sender.send(event) {
+                        self.reply_error(&ctx, &component, "❌ Lỗi: Game đã kết thúc.")
+                            .await;
+                        return;
+                    }
+
+                    let _ = component
+                        .create_response(
+                            &ctx.http,
+                            CreateInteractionResponse::UpdateMessage(
+                                CreateInteractionResponseMessage::new()
+                                    .content(format!("✅ 🛡️ Bạn đã bảo vệ <@{}>!", target_id))
+                                    .components(vec![]),
+                            ),
+                        )
+                        .await;
+
+                    return;
+                }
+
                 if custom_id.starts_with("guide_select:") {
                     let owner_id = custom_id.split(":").last().unwrap_or("");
                     if component.user.id.to_string() != owner_id {
