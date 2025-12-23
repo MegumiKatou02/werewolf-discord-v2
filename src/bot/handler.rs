@@ -45,6 +45,8 @@ impl Handler {
         trigger_prefix: &str,
         menu_id: &str,
         placeholder: &str,
+        min_values: u8,
+        max_values: u8,
         filter_predicate: F,
     ) -> Option<(ChannelId, MessageId)>
     where
@@ -96,21 +98,50 @@ impl Handler {
                 .push(CreateSelectMenuOption::new(label, player.user_id.to_string()).emoji('👤'));
         }
 
-        options.push(CreateSelectMenuOption::new("Hủy bỏ", "cancel_action").emoji('❌'));
+        let valid_player_count = options.len();
+
+        if min_values == 1 {
+            options.push(CreateSelectMenuOption::new("Hủy bỏ", "cancel_action").emoji('❌'));
+        }
+
         if options.len() > 25 {
             options.truncate(25);
         }
 
+        let actual_max: u8 = std::cmp::min(max_values, options.len().try_into().unwrap_or(u8::MAX));
+
+        let actual_min = if min_values > actual_max {
+            actual_max
+        } else {
+            min_values
+        };
+
+        if valid_player_count < min_values as usize {
+            let _ = self
+                .reply_error(ctx, component, "❌ Không đủ người chơi để chọn.")
+                .await;
+            return None;
+        }
+
         let select_menu = CreateSelectMenu::new(menu_id, CreateSelectMenuKind::String { options })
-            .placeholder(placeholder);
+            .placeholder(placeholder)
+            .min_values(actual_min)
+            .max_values(actual_max);
 
         if let Err(e) = component
             .create_response(
                 &ctx.http,
                 CreateInteractionResponse::Message(
                     CreateInteractionResponseMessage::new()
-                        .content("Hãy chọn mục tiêu:")
-                        .select_menu(select_menu), // .ephemeral(true),
+                        .content(format!(
+                            "Hãy chọn {} mục tiêu:",
+                            if actual_min == actual_max {
+                                actual_min.to_string()
+                            } else {
+                                format!("{}-{}", actual_min, actual_max)
+                            }
+                        ))
+                        .select_menu(select_menu),
                 ),
             )
             .await
@@ -177,6 +208,8 @@ impl EventHandler for Handler {
                             "vote_target_wolf_",
                             "wolf_submit_vote",
                             "💀 Chọn nạn nhân...",
+                            1,
+                            1,
                             |p| p.alive && !p.is_werewolf(),
                         )
                         .await;
@@ -263,6 +296,8 @@ impl EventHandler for Handler {
                             "protect_target_bodyguard_",
                             "bodyguard_submit_protect",
                             "🛡️ Chọn người cần bảo vệ...",
+                            1,
+                            1,
                             |p| p.alive && p.user_id != component.user.id,
                         )
                         .await;
@@ -348,7 +383,6 @@ impl EventHandler for Handler {
                     return;
                 }
 
-                // === SEER VIEW ===
                 if custom_id.starts_with("view_target_seer_") {
                     let msg_info = self
                         .handle_target_selection_menu(
@@ -357,6 +391,8 @@ impl EventHandler for Handler {
                             "view_target_seer_",
                             "seer_submit_view",
                             "👁️ Chọn người cần xem phe...",
+                            1,
+                            1,
                             |p| p.alive && p.user_id != component.user.id,
                         )
                         .await;
@@ -440,6 +476,93 @@ impl EventHandler for Handler {
                         .await;
 
                     return;
+                }
+
+                if custom_id.starts_with("investigate_target_detective_") {
+                    let msg_info = self
+                        .handle_target_selection_menu(
+                            &ctx,
+                            &component,
+                            "investigate_target_detective_",
+                            "detective_submit_action",
+                            "🔎 Chọn người thứ nhất để điều tra...",
+                            2,
+                            2,
+                            |p| p.alive,
+                        )
+                        .await;
+
+                    if let Some((channel_id, message_id)) = msg_info {
+                        if let Some(room_handle) =
+                            self.get_room_handle_by_user(component.user.id).await
+                        {
+                            let event = RoomEvent::RegisterInteraction {
+                                user_id: component.user.id,
+                                channel_id,
+                                message_id,
+                                message_type_store: MessageTypeStore::NightMessage,
+                            };
+
+                            let _ = room_handle.sender.send(event);
+                        }
+                    }
+                    return;
+                }
+
+                if custom_id == "detective_submit_action" {
+                    let values = match &component.data.kind {
+                        ComponentInteractionDataKind::StringSelect { values } => values,
+                        _ => return,
+                    };
+
+                    if values.len() != 2 {
+                        self.reply_error(&ctx, &component, "❌ Vui lòng chọn đúng 2 người.")
+                            .await;
+                        return;
+                    }
+
+                    let target1_id = match values[0].parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    let target2_id = match values[1].parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    if let Some(handle) = self.get_room_handle_by_user(component.user.id).await {
+                        let event = RoomEvent::DetectiveInvestigate {
+                            user_id: component.user.id,
+                            target1: target1_id,
+                            target2: target2_id,
+                        };
+
+                        match handle.sender.send(event) {
+                            Ok(_) => {
+                                let _ = component
+                                    .create_response(
+                                        &ctx.http,
+                                        CreateInteractionResponse::UpdateMessage(
+                                            CreateInteractionResponseMessage::new()
+                                                .content(format!(
+                                                    "✅ Đang điều tra <@{}> và <@{}>...",
+                                                    target1_id, target2_id
+                                                ))
+                                                .components(vec![]),
+                                        ),
+                                    )
+                                    .await;
+                            }
+                            Err(_) => {
+                                self.reply_error(&ctx, &component, "❌ Game đã kết thúc.")
+                                    .await;
+                            }
+                        }
+                    } else {
+                        self.reply_error(&ctx, &component, "❌ Không tìm thấy phòng.")
+                            .await;
+                    }
                 }
 
                 if custom_id.starts_with("guide_select:") {

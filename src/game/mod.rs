@@ -139,6 +139,11 @@ pub enum RoomEvent {
         user_id: UserId,
         target: UserId,
     },
+    DetectiveInvestigate {
+        user_id: UserId,
+        target1: UserId,
+        target2: UserId,
+    },
     HangVote {
         user_id: UserId,
         target: String,

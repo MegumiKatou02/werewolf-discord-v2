@@ -534,15 +534,6 @@ impl GameRoom {
                     return Ok(());
                 }
 
-                // if target == user_id {
-                //     let _ = user_id
-                //         .create_dm_channel(&self.http)
-                //         .await?
-                //         .say(&self.http, "❌ Bạn không thể tự bảo vệ bản thân.")
-                //         .await;
-                //     return Ok(());
-                // }
-
                 if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
                     if let Some(bodyguard) = player
                         .role
@@ -652,6 +643,96 @@ impl GameRoom {
                             .await;
                     }
                 }
+            }
+            RoomEvent::DetectiveInvestigate {
+                user_id,
+                target1,
+                target2,
+            } => {
+                if self.game_state.phase != Phase::Night {
+                    return Ok(());
+                }
+
+                let http = self.http.clone();
+                let send_dm = |msg: String| async move {
+                    if let Ok(dm) = user_id.create_dm_channel(&http).await {
+                        let _ = dm.say(&http, msg).await;
+                    }
+                };
+
+                let get_target_info = |uid: UserId| {
+                    self.players
+                        .iter()
+                        .find(|p| p.user_id == uid)
+                        .map(|p| (p.alive, p.name.clone(), p.role.faction(), p.role.id()))
+                };
+
+                let (t1_alive, t1_name, t1_faction, t1_role_id) = match get_target_info(target1) {
+                    Some(i) => i,
+                    None => return Ok(()),
+                };
+                let (t2_alive, t2_name, t2_faction, t2_role_id) = match get_target_info(target2) {
+                    Some(i) => i,
+                    None => return Ok(()),
+                };
+                if !t1_alive || !t2_alive {
+                    send_dm("❌ Không có tác dụng lên người chết.".to_string()).await;
+                    return Ok(());
+                }
+
+                if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
+                    // player.has_acted = true; // Đánh dấu đã hành động (cho Stalker soi)
+
+                    if let Some(detective) = player
+                        .role
+                        .as_any_mut()
+                        .downcast_mut::<crate::roles::Detective>()
+                    {
+                        if detective.investigated_count == 0 {
+                            send_dm("❌ Bạn đã hết lượt dùng chức năng.".to_string()).await;
+                            return Ok(());
+                        }
+
+                        detective.investigated_count -= 1;
+                        detective.investigated_targets.push(target1);
+                        detective.investigated_targets.push(target2);
+
+                        let is_same_faction = {
+                            let is_lycan_involved =
+                                t1_role_id == RoleId::Lycan || t2_role_id == RoleId::Lycan;
+
+                            if is_lycan_involved {
+                                let t1_is_wolf_side =
+                                    t1_role_id == RoleId::Lycan || t1_faction == Faction::Werewolf;
+                                let t2_is_wolf_side =
+                                    t2_role_id == RoleId::Lycan || t2_faction == Faction::Werewolf;
+                                t1_is_wolf_side == t2_is_wolf_side
+                            } else if (t1_faction == Faction::ViWolf
+                                && t2_faction == Faction::Village)
+                                || (t1_faction == Faction::Village && t2_faction == Faction::ViWolf)
+                            {
+                                true
+                            } else {
+                                t1_faction == t2_faction
+                            }
+                        };
+
+                        let result_text = if is_same_faction {
+                            format!(
+                                "🔎 Kết quả: **{}** và **{}** ở **CÙNG PHE**.",
+                                t1_name, t2_name
+                            )
+                        } else {
+                            format!(
+                                "🔎 Kết quả: **{}** và **{}** ở **KHÁC PHE**.",
+                                t1_name, t2_name
+                            )
+                        };
+
+                        send_dm(result_text).await;
+                    }
+                }
+                return Ok(());
             }
             _ => {}
         }
