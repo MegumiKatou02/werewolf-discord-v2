@@ -21,7 +21,8 @@ use crate::game::{
     RoomSnapshot, RoomStatus, StartGameResult,
 };
 use crate::types::data::RolesData;
-use crate::types::Player;
+use crate::types::{Faction, Player};
+use crate::utils::role::RoleId;
 
 pub type RoomRegistry = Arc<RwLock<HashMap<GuildId, RoomHandle>>>;
 pub type PlayerRegistry = Arc<RwLock<HashMap<UserId, GuildId>>>;
@@ -565,6 +566,88 @@ impl GameRoom {
                             .say(
                                 &self.http,
                                 format!("🛡️ Bạn đã bảo vệ: **{}**.", target_name),
+                            )
+                            .await;
+                    }
+                }
+            }
+            RoomEvent::SeerView { user_id, target } => {
+                if self.game_state.phase != Phase::Night {
+                    return Ok(());
+                }
+
+                let (target_alive, target_name, target_role_id, target_faction) =
+                    match self.players.iter().find(|p| p.user_id == target) {
+                        Some(p) => (p.alive, p.name.clone(), p.role.id(), p.role.faction()),
+                        None => return Ok(()),
+                    };
+
+                if !target_alive {
+                    let _ = user_id
+                        .create_dm_channel(&self.http)
+                        .await?
+                        .say(&self.http, "❌ Không có tác dụng lên người chết.")
+                        .await;
+                    return Ok(());
+                }
+
+                if target == user_id {
+                    let _ = user_id
+                        .create_dm_channel(&self.http)
+                        .await?
+                        .say(&self.http, "❌ Bạn không thể xem phe của chính mình.")
+                        .await;
+                    return Ok(());
+                }
+
+                let alpha_masked_target = self
+                    .players
+                    .iter()
+                    .find(|p| p.role.id() == RoleId::AlphaWerewolf && p.alive)
+                    .and_then(|p| {
+                        p.role
+                            .as_any()
+                            .downcast_ref::<crate::roles::AlphaWerewolf>()
+                    })
+                    .and_then(|alpha| alpha.mask_wolf);
+
+                if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
+                    if let Some(seer) = player
+                        .role
+                        .as_any_mut()
+                        .downcast_mut::<crate::roles::Seer>()
+                    {
+                        if seer.view_count == 0 {
+                            let _ = user_id
+                                .create_dm_channel(&self.http)
+                                .await?
+                                .say(&self.http, "❌ Bạn đã hết lượt dùng chức năng.")
+                                .await;
+                            return Ok(());
+                        }
+
+                        seer.view_count -= 1;
+
+                        let faction_display = if Some(target) == alpha_masked_target {
+                            "Dân Làng"
+                        } else if target_role_id == RoleId::Lycan {
+                            "Ma Sói"
+                        } else {
+                            match target_faction {
+                                Faction::Werewolf => "Ma Sói",
+                                _ => "Dân Làng",
+                            }
+                        };
+
+                        let _ = user_id
+                            .create_dm_channel(&self.http)
+                            .await?
+                            .say(
+                                &self.http,
+                                format!(
+                                    "👁️ Phe của **{}** là: **{}**.",
+                                    target_name, faction_display
+                                ),
                             )
                             .await;
                     }
