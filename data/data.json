@@ -1,0 +1,140 @@
+{
+  "0": {
+    "title": "Ma Sói",
+    "eName": "Werewolf",
+    "faction": 0,
+    "description": "Mỗi đêm bạn có thể bỏ phiếu cùng đàn sói để chọn giết một người chơi."
+  },
+  "1": {
+    "title": "Dân Làng",
+    "eName": "Villager",
+    "faction": 1,
+    "description": "Bạn là một dân làng bình thường và không có khả năng gì đặc biệt."
+  },
+  "2": {
+    "title": "Bảo Vệ",
+    "eName": "Bodyguard",
+    "faction": 1,
+    "description": "Bạn có thể chọn một người chơi để bảo vệ mỗi đêm. Người được bảo vệ không thể bị giết vào đêm đó, thay vào đó bạn sẽ bị tấn công thay họ. Vì bạn rất khỏe nên sẽ không thể bị chết trong lần tấn công đầu tiên nhưng sẽ chết trong lần tấn công thứ hai. Mỗi đêm bạn sẽ tự bảo vệ chính mình."
+  },
+  "3": {
+    "title": "Bán Sói",
+    "eName": "Cursed",
+    "faction": 3,
+    "description": "Bạn là dân làng bình thường cho tới khi bị ma sói cắn, lúc đó bạn sẽ trở thành Ma sói."
+  },
+  "4": {
+    "title": "Tiên Tri",
+    "eName": "Seer",
+    "faction": 1,
+    "description": "Mỗi đêm bạn có thể xem phe của người chơi khác."
+  },
+  "5": {
+    "title": "Thám Tử",
+    "eName": "Detective",
+    "faction": 1,
+    "description": "Mỗi đêm, bạn có thể chọn hai người chơi để điều tra và biết được họ ở cùng một phe hay là khác phe."
+  },
+  "6": {
+    "title": "Phù Thuỷ",
+    "eName": "Witch",
+    "faction": 1,
+    "description": "Bạn có hai bình thuốc: Một bình dùng để giết và bình kia để bảo vệ người chơi. Bình bảo vệ chỉ được tiêu thụ nếu người chơi đó bị tấn công. Bạn không thể giết trong đêm đầu tiên."
+  },
+  "7": {
+    "title": "Thằng Ngố",
+    "eName": "Fool",
+    "faction": 2,
+    "description": "Bạn phải lừa dân làng treo cổ bạn. Nếu họ treo cổ bạn, bạn thắng."
+  },
+  "8": {
+    "title": "Thầy Đồng",
+    "eName": "Medium",
+    "faction": 1,
+    "description": "Vào buổi đêm bạn có thể trò chuyện ẩn danh với người chết. Bạn có khả năng chọn một dân làng đã chết trong đêm và hồi sinh họ khi đêm kết thúc một lần trong ván đấu."
+  },
+  "9": {
+    "title": "Người Chết",
+    "eName": "Dead",
+    "faction": -1,
+    "description": "Bạn đã chết rồi, đừng hỏi gì cả..."
+  },
+  "10": {
+    "title": "Hầu Gái",
+    "eName": "Maid",
+    "faction": 1,
+    "description": "Bạn được chọn 1 người làm chủ, chủ chết thì người đó lên thay và quản trò báo cho cả làng là hầu gái lên vai gì."
+  },
+  "11": {
+    "title": "Lycan",
+    "eName": "Lycan",
+    "faction": 1,
+    "description": "Là dân, bị soi thì quản trò bảo tiên tri là phe sói; bị thám tử soi với dân thì khác phe, soi với sói thì cùng phe; Nhưng bạn vẫn là dân, mãi mãi là dân..."
+  },
+  "12": {
+    "title": "Sói Tiên Tri",
+    "eName": "Wolf Seer",
+    "faction": 0,
+    "description": "Soi xem ai là tiên tri. Không được tham gia cùng sói, biết sói là ai và ngược lại, sói tiên tri soi xong thì quản trò sẽ báo cho sói biết là sói tiên tri soi ai."
+  },
+  "13": {
+    "title": "Sói Trùm",
+    "eName": "Alpha Werewolf",
+    "faction": 0,
+    "description": "Che các sói khỏi tiên tri, mỗi đêm 1 sói, được phép che liên tục một sói."
+  },
+  "14": {
+    "title": "Cáo",
+    "eName": "Fox Spirit",
+    "faction": 1,
+    "description": "Mỗi đêm dậy soi 3 người tự chọn trong danh sách, nếu 1 trong 3 người đó là sói thì được báo \"Có sói\", nếu đoán hụt thì mất chức năng."
+  },
+  "15": {
+    "title": "Già Làng",
+    "eName": "Elder",
+    "faction": 1,
+    "description": "Sói phải cắn 2 lần thì Già làng mới chết. Già Làng chỉ chết ngay lập tức nếu bị cả làng treo cổ, Phù Thủy bỏ độc... Khi Già làng chết thì tất cả những người phe dân làng đều mất khả năng đặc biệt cho đến hết ván."
+  },
+  "16": {
+    "title": "Stalker",
+    "eName": "Stalker",
+    "faction": 2,
+    "description": "Mỗi đêm bạn có thể theo dõi 1 người chơi và biết đêm đó họ có hành động hay không. Bạn còn có thể chọn người để ám sát, nếu ám sát trúng người không làm gì đêm đó thì người đó chết. Thắng khi là người duy nhất sống sót."
+  },
+  "17": {
+    "title": "Xạ Thủ",
+    "eName": "Gunner",
+    "faction": 1,
+    "description": "Bạn có hai viên đạn mà bạn có thể sử dụng để bắn ai đó. Bạn chỉ bắn được một viên đạn mỗi ngày. Vì âm thanh tiếng súng khi bắn rất lớn nên vai trò của bạn sẽ được tiết lộ sau lần bắn đầu tiên. Bạn không thể bắn trong giai đoạn thảo luận vào ngày đầu tiên."
+  },
+  "18": {
+    "title": "Sói Mèo Con",
+    "eName": "Kitten Wolf",
+    "faction": 0,
+    "description": "Bạn là một ma sói. Khi bạn bị giết, cuộc bỏ phiếu của sói tiếp theo sẽ biến đổi một dân làng thành ma sói thay vì giết chết họ."
+  },
+  "19": {
+    "title": "Người Múa Rối",
+    "eName": "The Puppeteer",
+    "faction": 1,
+    "description": "Một lần duy nhất trong suốt ván chơi, Người múa rối có thể chỉ định Sói ăn thịt một người. Người đó có thể là một người khác so với sự thống nhất ban đầu của Sói. Người múa rối cũng có thể buộc Sói ăn thịt một Sói khác."
+  },
+  "20": {
+    "title": "Sói Tà Thuật",
+    "eName": "Voodoo Werewolf",
+    "faction": 0,
+    "description": "Hai lần trong trò chơi bạn có thể làm câm lặng một người chơi, ngăn chặn họ nói chuyện và bỏ phiếu. Ngoài ra, một lần trong trò chơi, bạn có thể đưa một người chơi chìm vào cơn ác mộng, ngăn chặn mọi hành động ban đêm của họ."
+  },
+  "21": {
+    "title": "Sói Thao Túng",
+    "eName": "Wolffluencer",
+    "faction": 0,
+    "description": "Mỗi đêm, bạn có thể chọn một người chơi để thao túng họ. Ngày hôm sau, bạn sẽ điều khiển phiếu bầu của người chơi đó."
+  },
+  "22": {
+    "title": "Cậu Bé Miệng Bự",
+    "eName": "Loudmouth",
+    "faction": 1,
+    "description": "Bạn có thể chọn một người chơi để tiết lộ vai trò của họ khi bạn chết."
+  }
+}
