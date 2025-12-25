@@ -36,7 +36,6 @@ impl Role for Dead {
         RoleId::Dead
     }
     fn faction(&self) -> Faction {
-        // Dead giữ faction gốc để check victory
         match self.original_role_id {
             RoleId::Werewolf
             | RoleId::WolfSeer

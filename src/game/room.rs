@@ -608,7 +608,7 @@ impl GameRoom {
                         .as_any_mut()
                         .downcast_mut::<crate::roles::Seer>()
                     {
-                        if seer.view_count == 0 {
+                        if seer.view_count <= 0 {
                             let _ = user_id
                                 .create_dm_channel(&self.http)
                                 .await?

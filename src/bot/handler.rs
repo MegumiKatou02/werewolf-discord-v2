@@ -240,14 +240,25 @@ impl EventHandler for Handler {
                         return;
                     }
 
-                    let target_id: UserId;
-
-                    if let Some(target_id_str) = values.first() {
-                        let id = target_id_str.parse::<u64>().unwrap();
-                        target_id = UserId::new(id);
-                    } else {
+                    let first_value = &values[0];
+                    if first_value == "cancel_action" {
+                        let _ = component
+                            .create_response(
+                                &ctx.http,
+                                CreateInteractionResponse::UpdateMessage(
+                                    CreateInteractionResponseMessage::new()
+                                        .content("❌ Đã hủy bỏ hành động xem phe.")
+                                        .components(vec![]),
+                                ),
+                            )
+                            .await;
                         return;
                     }
+
+                    let target_id: UserId = match first_value.parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
 
                     let room_handle = match self.get_room_handle_by_user(component.user.id).await {
                         Some(h) => h,
@@ -269,18 +280,13 @@ impl EventHandler for Handler {
                         return;
                     }
 
-                    println!("target_id {}", target_id);
                     let _ = component
                         .create_response(
                             &ctx.http,
                             CreateInteractionResponse::UpdateMessage(
                                 CreateInteractionResponseMessage::new()
-                                    .content(format!(
-                                        "✅ Đã ghi nhận vote của bạn cho <@{}>!",
-                                        target_id
-                                    ))
-                                    .components(vec![])
-                                    .ephemeral(true),
+                                    .content(format!("Bạn đã chọn vote <@{}>", target_id))
+                                    .components(vec![]),
                             ),
                         )
                         .await;
@@ -546,7 +552,7 @@ impl EventHandler for Handler {
                                         CreateInteractionResponse::UpdateMessage(
                                             CreateInteractionResponseMessage::new()
                                                 .content(format!(
-                                                    "✅ Đang điều tra <@{}> và <@{}>...",
+                                                    "Đang điều tra <@{}> và <@{}>...",
                                                     target1_id, target2_id
                                                 ))
                                                 .components(vec![]),
