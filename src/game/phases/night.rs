@@ -269,7 +269,7 @@ fn build_night_prompt_and_components(
                 .unwrap_or(false);
 
             let prompt =
-                "🦊 Bạn là **Cáo**. Mỗi đêm soi 3 người, nếu có sói sẽ được báo \"Có sói\"."
+                "🦊 Bạn là **Cáo**. Mỗi đêm dậy soi 3 người tự chọn trong danh sách, nếu 1 trong 3 người đó là sói thì được báo \"Có sói\", nếu đoán hụt thì mất chức năng."
                     .to_string();
             let components = row_single(
                 format!("view_target_foxspirit_{}", owner_id),

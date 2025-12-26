@@ -8,6 +8,7 @@ pub struct FoxSpirit {
     pub death_night: i32,
     pub three_viewed: Vec<UserId>,
     pub is_have_skill: bool,
+    pub view_count: u8,
 }
 
 impl FoxSpirit {
@@ -17,6 +18,7 @@ impl FoxSpirit {
             death_night: -1,
             three_viewed: Vec::new(),
             is_have_skill: true,
+            view_count: 1,
         }
     }
 }
@@ -49,6 +51,7 @@ impl Role for FoxSpirit {
     fn reset_day(&mut self) {
         self.vote_hanged = None;
         self.three_viewed.clear();
+        self.view_count = 1;
     }
 
     fn reset_restrict(&mut self) {}

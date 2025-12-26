@@ -571,6 +571,99 @@ impl EventHandler for Handler {
                     }
                 }
 
+                if custom_id.starts_with("view_target_foxspirit") {
+                    let msg_info = self
+                        .handle_target_selection_menu(
+                            &ctx,
+                            &component,
+                            "view_target_foxspirit_",
+                            "submit_view_foxspirit",
+                            "🔍 Tìm sói",
+                            3,
+                            3,
+                            |p| p.alive,
+                        )
+                        .await;
+
+                    if let Some((channel_id, message_id)) = msg_info {
+                        if let Some(room_handle) =
+                            self.get_room_handle_by_user(component.user.id).await
+                        {
+                            let event = RoomEvent::RegisterInteraction {
+                                user_id: component.user.id,
+                                channel_id,
+                                message_id,
+                                message_type_store: MessageTypeStore::NightMessage,
+                            };
+
+                            let _ = room_handle.sender.send(event);
+                        }
+                    }
+                    return;
+                }
+
+                if custom_id == "submit_view_foxspirit" {
+                    let values = match &component.data.kind {
+                        ComponentInteractionDataKind::StringSelect { values } => values,
+                        _ => return,
+                    };
+
+                    if values.len() != 3 {
+                        self.reply_error(&ctx, &component, "❌ Vui lòng chọn đúng 3 người.")
+                            .await;
+                        return;
+                    }
+
+                    let target1_id = match values[0].parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    let target2_id = match values[1].parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    let target3_id = match values[2].parse::<u64>() {
+                        Ok(id) => UserId::new(id),
+                        Err(_) => return,
+                    };
+
+                    if let Some(handle) = self.get_room_handle_by_user(component.user.id).await {
+                        let event = RoomEvent::FoxSpiritFind {
+                            user_id: component.user.id,
+                            target1: target1_id,
+                            target2: target2_id,
+                            target3: target3_id,
+                        };
+
+                        match handle.sender.send(event) {
+                            Ok(_) => {
+                                let _ = component
+                                    .create_response(
+                                        &ctx.http,
+                                        CreateInteractionResponse::UpdateMessage(
+                                            CreateInteractionResponseMessage::new()
+                                                .content(format!(
+                                                    "Đang soi <@{}>, <@{}> và <@{}>...",
+                                                    target1_id, target2_id, target3_id
+                                                ))
+                                                .components(vec![]),
+                                        ),
+                                    )
+                                    .await;
+                            }
+                            Err(_) => {
+                                self.reply_error(&ctx, &component, "❌ Game đã kết thúc.")
+                                    .await;
+                            }
+                        }
+                    } else {
+                        self.reply_error(&ctx, &component, "❌ Không tìm thấy phòng.")
+                            .await;
+                    }
+                }
+
                 if custom_id.starts_with("guide_select:") {
                     let owner_id = custom_id.split(":").last().unwrap_or("");
                     if component.user.id.to_string() != owner_id {

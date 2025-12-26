@@ -144,6 +144,12 @@ pub enum RoomEvent {
         target1: UserId,
         target2: UserId,
     },
+    FoxSpiritFind {
+        user_id: UserId,
+        target1: UserId,
+        target2: UserId,
+        target3: UserId,
+    },
     HangVote {
         user_id: UserId,
         target: String,

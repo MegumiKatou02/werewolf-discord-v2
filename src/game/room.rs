@@ -644,6 +644,129 @@ impl GameRoom {
                     }
                 }
             }
+            RoomEvent::FoxSpiritFind {
+                user_id,
+                target1,
+                target2,
+                target3,
+            } => {
+                if self.game_state.phase != Phase::Night {
+                    return Ok(());
+                }
+
+                let http = self.http.clone();
+                let send_dm = move |msg: String| {
+                    let http = http.clone();
+                    async move {
+                        if let Ok(dm) = user_id.create_dm_channel(&http).await {
+                            let _ = dm.say(&http, msg).await;
+                        }
+                    }
+                };
+
+                let get_target_info = |uid: UserId| {
+                    self.players.iter().find(|p| p.user_id == uid).map(|p| {
+                        (
+                            p.alive,
+                            p.name.clone(),
+                            p.role.faction(),
+                            p.role.id(),
+                            p.user_id,
+                        )
+                    })
+                };
+
+                let t1 = match get_target_info(target1) {
+                    Some(i) => i,
+                    None => return Ok(()),
+                };
+                let t2 = match get_target_info(target2) {
+                    Some(i) => i,
+                    None => return Ok(()),
+                };
+                let t3 = match get_target_info(target3) {
+                    Some(i) => i,
+                    None => return Ok(()),
+                };
+
+                if !t1.0 || !t2.0 || !t3.0 {
+                    send_dm("❌ Không có tác dụng lên người chết.".to_string()).await;
+                    return Ok(());
+                }
+
+                let mut fox_lost_power = false;
+
+                if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
+                    // player.has_acted = true;
+
+                    if let Some(fox) = player
+                        .role
+                        .as_any_mut()
+                        .downcast_mut::<crate::roles::FoxSpirit>()
+                    {
+                        if fox.view_count <= 0 {
+                            send_dm("❌ Bạn đã hết lượt dùng chức năng.".to_string()).await;
+                            return Ok(());
+                        }
+
+                        fox.view_count -= 1;
+                    }
+                }
+
+                let mask_wolf_id: Option<UserId> = self
+                    .players
+                    .iter()
+                    .find(|p| p.role.id() == RoleId::AlphaWerewolf)
+                    .and_then(|p| {
+                        p.role
+                            .as_any()
+                            .downcast_ref::<crate::roles::AlphaWerewolf>()
+                    })
+                    .and_then(|alpha| alpha.mask_wolf);
+
+                let targets = vec![t1, t2, t3];
+                let mut found_wolf = false;
+
+                for (_, _, faction, role_id, uid) in &targets {
+                    let is_wolf_faction = *faction == Faction::Werewolf;
+                    let is_lycan = *role_id == RoleId::Lycan;
+                    let is_masked = Some(*uid) == mask_wolf_id;
+
+                    if is_lycan || (is_wolf_faction && !is_masked) {
+                        found_wolf = true;
+                        break;
+                    }
+                }
+
+                let t_names = format!(
+                    "**{}**, **{}** và **{}**",
+                    targets[0].1, targets[1].1, targets[2].1
+                );
+
+                if found_wolf {
+                    send_dm(format!("🦊 Trong 3 người: {}, **CÓ SÓI**.", t_names)).await;
+                } else {
+                    send_dm(format!("🦊 Trong 3 người: {}, **KHÔNG CÓ SÓI**.", t_names)).await;
+
+                    send_dm("⚠️ Bạn bị mất chức năng vĩnh viễn vì đoán sai.".to_string()).await;
+                    fox_lost_power = true;
+                }
+
+                if fox_lost_power {
+                    if let Some(player) = self.players.iter_mut().find(|p| p.user_id == user_id) {
+                        if let Some(fox) = player
+                            .role
+                            .as_any_mut()
+                            .downcast_mut::<crate::roles::FoxSpirit>()
+                        {
+                            fox.view_count = 0;
+                            fox.is_have_skill = false;
+                        }
+                    }
+                }
+
+                return Ok(());
+            }
             RoomEvent::DetectiveInvestigate {
                 user_id,
                 target1,
